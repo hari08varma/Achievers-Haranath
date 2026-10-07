@@ -25,7 +25,13 @@ pipeline {
 
         stage('JUnit Test') {
             steps {
-                sh 'mvn -B test'
+                withCredentials([
+                    string(credentialsId: 'account-token-key', variable: 'ACCOUNT_TOKEN_KEY'),
+                    string(credentialsId: 'receipt-signing-key', variable: 'RECEIPT_SIGNING_KEY'),
+                    string(credentialsId: 'payment-gateway-api-key', variable: 'PAYMENT_GATEWAY_API_KEY')
+                ]) {
+                    sh 'mvn -B test'
+                }
             }
             post {
                 always {
@@ -88,26 +94,35 @@ pipeline {
 
         stage('Docker Run') {
             steps {
-                sh '''
-                    docker rm -f ${APP_NAME}-pipeline 2>/dev/null || true
+                withCredentials([
+                    string(credentialsId: 'account-token-key', variable: 'ACCOUNT_TOKEN_KEY'),
+                    string(credentialsId: 'receipt-signing-key', variable: 'RECEIPT_SIGNING_KEY'),
+                    string(credentialsId: 'payment-gateway-api-key', variable: 'PAYMENT_GATEWAY_API_KEY')
+                ]) {
+                    sh '''
+                        docker rm -f ${APP_NAME}-pipeline 2>/dev/null || true
 
-                    docker run -d \
-                      --name ${APP_NAME}-pipeline \
-                      --restart unless-stopped \
-                      -p ${HOST_PORT}:${CONTAINER_PORT} \
-                      ${APP_NAME}:${IMAGE_TAG}
+                        docker run -d \
+                          --name ${APP_NAME}-pipeline \
+                          --restart unless-stopped \
+                          -p ${HOST_PORT}:${CONTAINER_PORT} \
+                          -e ACCOUNT_TOKEN_KEY="$ACCOUNT_TOKEN_KEY" \
+                          -e RECEIPT_SIGNING_KEY="$RECEIPT_SIGNING_KEY" \
+                          -e PAYMENT_GATEWAY_API_KEY="$PAYMENT_GATEWAY_API_KEY" \
+                          ${APP_NAME}:${IMAGE_TAG}
 
-                    for i in $(seq 1 20); do
-                        if curl -fsS http://127.0.0.1:${HOST_PORT}/ > /dev/null; then
-                            echo "Application is reachable."
-                            exit 0
-                        fi
-                        sleep 2
-                    done
+                        for i in $(seq 1 20); do
+                            if curl -fsS http://127.0.0.1:${HOST_PORT}/ > /dev/null; then
+                                echo "Application is reachable."
+                                exit 0
+                            fi
+                            sleep 2
+                        done
 
-                    docker logs ${APP_NAME}-pipeline
-                    exit 1
-                '''
+                        docker logs ${APP_NAME}-pipeline
+                        exit 1
+                    '''
+                }
             }
         }
     }
@@ -122,7 +137,7 @@ pipeline {
         }
 
         failure {
-            echo 'Pipeline failed. Deployment did not proceed past the failed gate.'
+            echo 'Pipeline failed. Check the failed security/build gate.'
         }
     }
 }

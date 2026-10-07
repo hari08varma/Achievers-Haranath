@@ -1,0 +1,5 @@
+712d2f01abded735c6d984b41b83989949b1a28b:src/main/java/com/novabank/transfer/security/AccountTokenService.java:generic-api-key:16
+712d2f01abded735c6d984b41b83989949b1a28b:src/main/resources/partner/partner-private-key.pem:private-key:1
+712d2f01abded735c6d984b41b83989949b1a28b:Dockerfile:stripe-access-token:4
+712d2f01abded735c6d984b41b83989949b1a28b:src/main/resources/application.properties:stripe-access-token:19
+712d2f01abded735c6d984b41b83989949b1a28b:src/main/java/com/novabank/transfer/security/ReceiptSigner.java:generic-api-key:16
